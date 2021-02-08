@@ -1,0 +1,58 @@
+- name: playbook to install docker and docker-compose
+  hosts: servers
+  become: yes
+  # remote_user: ubuntu
+  gather_facts: false
+  tasks:
+  - name: Install necessary packages
+    apt:
+      name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg-agent', 'software-properties-common', 'python3', 'python3-pip', 'git']
+      state: present
+      update_cache: yes
+  - name: Add Docker s official GPG key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+  - name: Verify that we have the key with the fingerprint
+    apt_key:
+      id: 0EBFCD88
+      state: present
+  - name: Get the name of the distribution
+    command: lsb_release -sc
+    register: distribution
+  - name: Set up the stable repository
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ distribution.stdout }} stable
+      state: present
+      update_cache: yes
+  - name: Update the apt package index
+    apt:
+      update_cache: yes
+  - name: Install Docker Engine
+    apt:
+      name: docker-ce
+      state: present
+      update_cache: yes
+  - name: Add remote_user "ubuntu" to "docker" group
+    user:
+      name: "ubuntu"
+      group: "docker"
+      append: yes
+  - name: Install docker-compose
+    get_url: 
+      url : https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: 'u+x,g+x'
+  - name: Clone weatherapp
+    git:
+      repo: https://github.com/jimplaku/weatherapp.git
+      clone: yes
+      force: yes
+      dest: /home/ubuntu/weatherapp
+      version: main
+  - name: Install docker-compose for python
+    pip:
+      name: docker-compose
+  - name: Run docker-compose
+    docker_compose:
+      project_src: /home/ubuntu/weatherapp

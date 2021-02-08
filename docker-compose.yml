@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+
+  weather_backend:
+    build: ./backend
+    image: weatherapp_backend
+    ports:
+      - 9000:9000
+    environment:
+      - APPID=9051cc67d71f751f8e517066bc91b204
+      
+  weather_frontend:
+    build: ./frontend
+    image: weatherapp_frontend
+    ports:
+      - 8000:8000
+    environment: 
+      - ENDPOINT=http://localhost:9000/api
